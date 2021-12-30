@@ -5,8 +5,9 @@ from flask.wrappers import Request
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from sqlalchemy.orm import backref
+from datetime import datetime
 from wtforms import StringField, PasswordField, BooleanField
-from wtforms.validators import InputRequired, Email, Length
+from wtforms.validators import DataRequired, InputRequired, Email, Length
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_manager, login_user, login_required, logout_user, current_user
@@ -24,16 +25,16 @@ login_manager.login_view = 'login'
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(15), unique=True)
-    email = db.Column(db.String(50), unique=True)
-    password = db.Column(db.String(80), unique=True)
+    username = db.Column(db.String(15), nullable=False, unique=True)
+    email = db.Column(db.String(50), nullable=False, unique=True)
+    password = db.Column(db.String(80), nullable=False, unique=True)
     routes = db.relationship('Routes', backref='owner')
 
 
 class Routes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    date = db.Column(db.DateTime(50))
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
     truck_id = db.Column(db.Integer, unique=True)
     last_name = db.Column(db.String(50), unique=True)
     customer = db.Column(db.String(50))
@@ -45,9 +46,9 @@ class Routes(db.Model):
     debt = db.Column(db.Integer)
     comment = db.Column(db.String(100))
 
-    def __init__(self, owner_id, date, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment):
+    def __init__(self, owner_id, date_added, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment):
         self.owner_id = owner_id
-        self.date = date
+        self.date_added = date_added
         self.truck_id = truck_id
         self.last_name = last_name
         self.customer = customer
@@ -94,7 +95,7 @@ def insert():
 
     if request.method == 'POST':
         owner_id = request.form['owner_id']
-        date = request.form['date']
+        date_added = request.form['date_added']
         truck_id = request.form['truck_id']
         last_name = request.form['last_name']
         customer = request.form['customer']
@@ -106,7 +107,7 @@ def insert():
         debt = request.form['debt']
         comment = request.form['comment']
 
-        my_route = Routes(owner_id, date, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment)
+        my_route = Routes(owner_id, date_added, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment)
         db.session.add(my_route)
         db.session.commit()
 
@@ -123,7 +124,7 @@ def update():
     if request.method == 'POST':
         my_route = Routes.query.get(request.form.get('id'))
         my_route.owner_id = request.form['owner_id']
-        my_route.date = request.form['date']
+        my_route.date_added = request.form['date_added']
         my_route.truck_id = request.form['truck_id']
         my_route.last_name = request.form['last_name']
         my_route.customer = request.form['customer']
