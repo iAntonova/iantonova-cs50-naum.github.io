@@ -10,6 +10,7 @@ from wtforms.validators import InputRequired, Email, Length
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_manager, login_user, login_required, logout_user, current_user
+from datetime import datetime, date 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposetobesecret!'
@@ -33,31 +34,31 @@ class User(UserMixin, db.Model):
 class Routes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    date = db.Column(db.DateTime(50))
-    truck_id = db.Column(db.Integer, unique=True)
-    last_name = db.Column(db.String(50), unique=True)
-    customer = db.Column(db.String(50))
-    loading = db.Column(db.String(50))
-    unloading = db.Column(db.String(50))
-    received = db.Column(db.Integer)
-    price = db.Column(db.Integer)
-    payment = db.Column(db.String(12))
-    debt = db.Column(db.Integer)
+    date_added = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    truck_id = db.Column(db.Integer, nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    customer = db.Column(db.String(50), nullable=False)
+    loading = db.Column(db.String(50), nullable=False)
+    unloading = db.Column(db.String(50), nullable=False)
+    received = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False)
+    payment = db.Column(db.String(12), nullable=False)
+    debt = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.String(100))
 
-    def __init__(self, owner_id, date, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment):
-        self.owner_id = owner_id
-        self.date = date
-        self.truck_id = truck_id
-        self.last_name = last_name
-        self.customer = customer
-        self.loading = loading
-        self.unloading = unloading
-        self.received = received
-        self.price = price
-        self.payment = payment
-        self.debt = debt
-        self.comment = comment
+    # def __init__(self, owner_id, date_added, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment):
+    #     self.owner_id = owner_id
+    #     self.date_added = date_added
+    #     self.truck_id = truck_id
+    #     self.last_name = last_name
+    #     self.customer = customer
+    #     self.loading = loading
+    #     self.unloading = unloading
+    #     self.received = received
+    #     self.price = price
+    #     self.payment = payment
+    #     self.debt = debt
+    #     self.comment = comment
 
 
 @login_manager.user_loader
@@ -83,9 +84,9 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    all_route = Routes.query.all()
+    rows = Routes.query.all()
 
-    return render_template('dashboard.html', name=current_user.username, routes=all_route)
+    return render_template("dashboard.html", name=current_user.username, row=rows)
 
 
 @app.route('/insert', methods=['POST'])
@@ -94,7 +95,7 @@ def insert():
 
     if request.method == 'POST':
         owner_id = request.form['owner_id']
-        date = request.form['date']
+        #date_added = request.form['date_added'] date_added,
         truck_id = request.form['truck_id']
         last_name = request.form['last_name']
         customer = request.form['customer']
@@ -106,7 +107,8 @@ def insert():
         debt = request.form['debt']
         comment = request.form['comment']
 
-        my_route = Routes(owner_id, date, truck_id, last_name, customer, loading, unloading, received, price, payment, debt, comment)
+        my_route = Routes(owner_id=owner_id, truck_id=truck_id, last_name=last_name, customer=customer, loading=loading, unloading=unloading, 
+                received=received, price=price, payment=payment, debt=debt, comment=comment)
         db.session.add(my_route)
         db.session.commit()
 
@@ -123,7 +125,7 @@ def update():
     if request.method == 'POST':
         my_route = Routes.query.get(request.form.get('id'))
         my_route.owner_id = request.form['owner_id']
-        my_route.date = request.form['date']
+        # my_route.date_added = request.form['date_added']
         my_route.truck_id = request.form['truck_id']
         my_route.last_name = request.form['last_name']
         my_route.customer = request.form['customer']
